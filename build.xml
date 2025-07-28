@@ -1,0 +1,15 @@
+<project name="VulnerableJavaApp" basedir="." default="compile">
+    <target name="compile">
+        <mkdir dir="build/classes"/>
+        <javac srcdir="src" destdir="build/classes"/>
+    </target>
+
+    <target name="war">
+        <mkdir dir="build/webapp/WEB-INF"/>
+        <copy todir="build/webapp">
+            <fileset dir="web"/>
+        </copy>
+        <copy file="web.xml" todir="build/webapp/WEB-INF"/>
+        <jar destfile="VulnerableJavaApp.war" basedir="build/webapp"/>
+    </target>
+</project>

@@ -1,0 +1,28 @@
+<web-app>
+  <servlet>
+    <servlet-name>LoginServlet</servlet-name>
+    <servlet-class>com.example.LoginServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>LoginServlet</servlet-name>
+    <url-pattern>/login</url-pattern>
+  </servlet-mapping>
+
+  <servlet>
+    <servlet-name>CommentServlet</servlet-name>
+    <servlet-class>com.example.CommentServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>CommentServlet</servlet-name>
+    <url-pattern>/comment</url-pattern>
+  </servlet-mapping>
+
+  <servlet>
+    <servlet-name>FileViewerServlet</servlet-name>
+    <servlet-class>com.example.FileViewerServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>FileViewerServlet</servlet-name>
+    <url-pattern>/viewfile</url-pattern>
+  </servlet-mapping>
+</web-app>
