@@ -4,42 +4,65 @@ import javax.servlet.*;
 import javax.servlet.http.*;
 import java.io.*;
 import java.sql.*;
+import java.util.Properties;
 
 public class LoginServlet extends HttpServlet {
 
-    private static final String DB_URL = "jdbc:sqlite:users.db"; // Hardcoded DB path
-    private static final String SESSION_KEY = "hardcoded-session-key"; // Insecure
+    private static final String DB_URL_PROP_KEY = "db.url";
+    private static final String SESSION_KEY_PROP_KEY = "session.key";
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String username = request.getParameter("username");
         String password = request.getParameter("password");
 
-        try (Connection conn = DriverManager.getConnection(DB_URL)) {
-            Statement stmt = conn.createStatement();
+        if (username == null || password == null) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing username or password");
+            return;
+        }
 
-            // ❌ SQL Injection Vulnerability
-            String query = "SELECT * FROM users WHERE username = '" + username + "' AND password = '" + password + "'";
-            ResultSet rs = stmt.executeQuery(query);
+        try (Connection conn = getConnection()) {
+            String query = "SELECT * FROM users WHERE username = ? AND password = ?";
+            PreparedStatement stmt = conn.prepareStatement(query);
+            stmt.setString(1, username);
+            stmt.setString(2, password);
+            ResultSet rs = stmt.executeQuery();
 
             if (rs.next()) {
-                // ✅ Login success
                 HttpSession session = request.getSession();
-                session.setAttribute("auth", SESSION_KEY);
+                String sessionKey = getSessionKey();
+                session.setAttribute("auth", sessionKey);
                 response.getWriter().println("Logged in successfully!");
             } else {
                 response.getWriter().println("Login failed.");
             }
         } catch (SQLException e) {
-            e.printStackTrace();
-            response.getWriter().println("Database error.");
+            logError(e);
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Database error");
         }
+    }
 
-        // ❌ Insecure Deserialization
-        String data = request.getParameter("payload");
-        try (ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(data.getBytes()))) {
-            Object obj = ois.readObject(); // Unsafe
-        } catch (Exception e) {
-            e.printStackTrace();
+    private Connection getConnection() throws SQLException {
+        String dbUrl = getConfigProperty(DB_URL_PROP_KEY);
+        return DriverManager.getConnection(dbUrl);
+    }
+
+    private String getSessionKey() {
+        return getConfigProperty(SESSION_KEY_PROP_KEY);
+    }
+
+    private String getConfigProperty(String key) {
+        Properties props = new Properties();
+        try (InputStream is = getServletContext().getResourceAsStream("/WEB-INF/config.properties")) {
+            props.load(is);
+            return props.getProperty(key);
+        } catch (IOException e) {
+            logError(e);
+            return null;
         }
+    }
+
+    private void logError(Exception e) {
+        ServletContext ctx = getServletContext();
+        ctx.log("Error in " + getClass().getName(), e);
     }
 }
